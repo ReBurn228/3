@@ -4960,36 +4960,65 @@ local function Universal2_routine() -- Routine: StarterGui.YARHM.Universal 2.0
 		end,}
 	})
 	
+	local godModeActive = false
+	local godModeConnection = nil
 	table.insert(module, {
-		Type = "Text",
-		Args = {"Combat & Defense"}
-	})
-	
-	table.insert(module, {
-		Type = "Button",
-		Args = {"God mode (Very, VERY UNSTABLE)", function(Self)
-			local Cam = workspace.CurrentCamera
-			local lp = game:GetService("Players").LocalPlayer
-			local Pos, Char = Cam.CFrame, lp.Character
-			if not Char then fu.notification("No character!") return end
-			local Human = Char:FindFirstChildOfClass("Humanoid")
-			if not Human then fu.notification("No humanoid!") return end
-			local nHuman = Human:Clone()
-			nHuman.Parent, lp.Character = Char, nil
-			nHuman:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
-			nHuman:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-			nHuman:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-			nHuman.BreakJointsOnDeath, Human = true, Human:Destroy()
-			lp.Character, Cam.CameraSubject, Cam.CFrame = Char, nHuman, task.wait() and Pos
-			nHuman.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-			local Animate = Char:FindFirstChild("Animate")
-			if Animate then
-				Animate.Disabled = true
-				task.wait()
-				Animate.Disabled = false
+		Type = "Toggle",
+		Args = {"God mode", function(Self, state)
+			godModeActive = state
+			if state then
+				local lp = game:GetService("Players").LocalPlayer
+				local function enableGod()
+					local char = lp.Character
+					if char then
+						local humanoid = char:FindFirstChildOfClass("Humanoid")
+						if humanoid then
+							humanoid.MaxHealth = 9e9
+							humanoid.Health = 9e9
+						end
+					end
+				end
+				enableGod()
+				godModeConnection = lp.CharacterAdded:Connect(function(char)
+					task.wait(0.5)
+					local humanoid = char:WaitForChild("Humanoid", 5)
+					if humanoid then
+						humanoid.MaxHealth = 9e9
+						humanoid.Health = 9e9
+					end
+				end)
+				
+				-- We also run a loop to constantly set the health to prevent death from damage spikes
+				task.spawn(function()
+					while godModeActive do
+						local char = lp.Character
+						if char then
+							local humanoid = char:FindFirstChildOfClass("Humanoid")
+							if humanoid then
+								humanoid.MaxHealth = 9e9
+								humanoid.Health = 9e9
+							end
+						end
+						task.wait(0.1)
+					end
+				end)
+				fu.notification("God mode enabled!")
+			else
+				if godModeConnection then
+					godModeConnection:Disconnect()
+					godModeConnection = nil
+				end
+				local lp = game:GetService("Players").LocalPlayer
+				local char = lp.Character
+				if char then
+					local humanoid = char:FindFirstChildOfClass("Humanoid")
+					if humanoid then
+						humanoid.MaxHealth = 100
+						humanoid.Health = 100
+					end
+				end
+				fu.notification("God mode disabled.")
 			end
-			nHuman.Health = nHuman.MaxHealth
-			fu.notification("God mode enabled!")
 		end}
 	})
 	
